@@ -17,7 +17,8 @@ This repository is part of the **Drowsy Guard Autopilot System (DGAS)** graduati
 ---
 🖼️ System Design Diagram
 Inline-style: 
-![alt text](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png "Logo Title Text 1")
+
+![alt text](https://github.com/Omar-Dahy/DGAS_AVR_ECU/blob/main/desgin%20photo.png "desgin")
 ---
 ## 🔧 Tools & Technologies
 
