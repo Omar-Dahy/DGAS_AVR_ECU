@@ -48,11 +48,11 @@ DMA_HandleTypeDef hdma_i2c1_tx;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-char uart_buffer[10];
-uint16_t tx_angle;
-uint8_t i = 0;
-char rx;
-uint8_t ready_to_send = 1;
+char uart_buffer[10];  		// UART input buffer
+uint16_t tx_angle;			// Angle to send via I2C
+uint8_t i = 0;				// UART input index
+char rx;					// Character received from UART
+uint8_t ready_to_send = 1;	// Flag to indicate readiness to send
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,7 +62,7 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c);		// I2C transmission complete callback
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -103,31 +103,40 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Transmit(&huart2, (uint8_t *)"Enter angle:\r\n", 14, 100);
+  HAL_UART_Transmit(&huart2, (uint8_t *)"Enter angle:\r\n", 14, 100);		// Prompt the user
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // Wait for a character from UART
 	  if (HAL_UART_Receive(&huart2, (uint8_t *)&rx, 1, HAL_MAX_DELAY) == HAL_OK)
 	      {
-	        if (rx == '\r' || rx == '\n')
+			// Enter key detected
+	        if (rx == '\r' || rx == '\n')		
 	        {
-	          uart_buffer[i] = '\0';
-	          tx_angle = atoi(uart_buffer);
-	          i = 0;
-	          memset(uart_buffer, 0, sizeof(uart_buffer));
-
-	          if (ready_to_send)
-	          {
-	            ready_to_send = 0;
-	            HAL_I2C_Master_Transmit_IT(&hi2c1, 0x08 << 1, (uint8_t*)&tx_angle, 2);
-	          }
+				// Null-terminate string
+				uart_buffer[i] = '\0';
+				// Convert to integer
+				tx_angle = atoi(uart_buffer);
+				// Reset buffer index
+				i = 0;
+				// Clear buffer
+				memset(uart_buffer, 0, sizeof(uart_buffer));
+				
+				// If ready to send over I2C
+				if (ready_to_send)
+				{
+					ready_to_send = 0;
+					// Send angle as 2 bytes over I2C
+					HAL_I2C_Master_Transmit_IT(&hi2c1, 0x08 << 1, (uint8_t*)&tx_angle, 2);
+				}
 	        }
 	        else if (i < sizeof(uart_buffer) - 1)
 	        {
-	          uart_buffer[i++] = rx;
+				// Add char to buffer
+				uart_buffer[i++] = rx;
 	        }
 	      }
     /* USER CODE END WHILE */
@@ -307,6 +316,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+// I2C Transmission complete callback
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     ready_to_send = 1;

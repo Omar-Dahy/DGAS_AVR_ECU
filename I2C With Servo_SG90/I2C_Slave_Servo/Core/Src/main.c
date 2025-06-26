@@ -49,7 +49,7 @@ TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-uint16_t received_angle;
+uint16_t received_angle;		// Variable to hold the angle received over I2C
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,6 +60,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
+// Callback to handle I2C data reception
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c);
 /* USER CODE END PFP */
 
@@ -102,10 +103,15 @@ int main(void)
   MX_I2C1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  // Start PWM signal on Timer 2 Channel 1
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  
+  // Start I2C reception in interrupt mode
   HAL_I2C_Slave_Receive_IT(&hi2c1, (uint8_t*)&received_angle, 2);
-
+  
+  // Notify over UART that system is ready
   HAL_UART_Transmit(&huart2, (uint8_t *)"Waiting for angle...\r\n", 23, 100);
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -350,18 +356,18 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-
+	// Convert received angle (0–180) into pulse width (e.g., 500us to 2500us)
 	uint32_t pulse = 500 + ((uint32_t)received_angle * 2000) / 180;
 
-
+	// Update PWM duty cycle to match pulse width
     __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, pulse);
 
-
+	// Send feedback via UART
     char msg[50];
     sprintf(msg, "Servo angle: %d\r\n", received_angle);
     HAL_UART_Transmit(&huart2, (uint8_t *)msg, strlen(msg), 100);
 
-
+	// Re-enable I2C reception for next angle
     HAL_I2C_Slave_Receive_IT(&hi2c1, (uint8_t*)&received_angle, 2);
 }
 /* USER CODE END 4 */
